@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Sistema Hospitalario</title>
+<style>
+body{font-family:Arial;margin:0;background:#f4f6f9;}
+#login{display:flex;justify-content:center;align-items:center;height:100vh;}
+.login-box{background:white;padding:30px;width:300px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,0.2);}
+input,select,textarea{width:100%;padding:8px;margin:5px 0;border:1px solid #ccc;border-radius:5px;}
+button{padding:10px;border:none;background:#3498db;color:white;border-radius:5px;cursor:pointer;}
+button:hover{background:#2980b9;}
+#panel{display:none;}
+.sidebar{width:220px;background:#2c3e50;height:100vh;position:fixed;color:white;padding-top:20px;}
+.sidebar h2{text-align:center;}
+.sidebar button{width:90%;margin:5px;background:#34495e;}
+.sidebar button:hover{background:#1abc9c;}
+.content{margin-left:220px;padding:20px;}
+.cards{display:flex;gap:20px;}
+.card{background:white;padding:20px;border-radius:10px;width:200px;box-shadow:0 0 5px rgba(0,0,0,0.1);}
+table{width:100%;border-collapse:collapse;margin-top:15px;}
+th,td{border:1px solid #ddd;padding:8px;text-align:center;}
+th{background:#3498db;color:white;}
+.section{display:none;}
+textarea{resize:none;}
+</style>
+</head>
+<body>
+
+<div id="login">
+<div class="login-box">
+<h2>Login</h2>
+<input id="user" placeholder="Usuario">
+<input id="pass" type="password" placeholder="Contraseña">
+<button onclick="login()">Entrar</button>
+<p id="error" style="color:red"></p>
+</div>
+</div>
+
+<div id="panel">
+<div class="sidebar">
+<h2>Panel</h2>
+<button onclick="mostrar('dashboard')">Panel de control</button>
+<button onclick="mostrar('pacientes')">Pacientes</button>
+<button onclick="mostrar('citas')">Citas</button>
+<button onclick="logout()">Cerrar sesión</button>
+</div>
+
+<div class="content">
+
+<div id="dashboard" class="section">
+<h1>Panel de control</h1>
+<div class="cards">
+<div class="card"><h3 id="totalPacientes">0</h3><p>Pacientes</p></div>
+<div class="card"><h3 id="totalCitas">0</h3><p>Citas</p></div>
+</div>
+</div>
+
+<div id="pacientes" class="section">
+<h1>Pacientes</h1>
+<input id="pacienteNombre" placeholder="Nombre completo">
+<input id="pacienteEdad" type="number" placeholder="Edad">
+<input id="pacientePeso" type="number" placeholder="Peso (kg)">
+<input id="pacienteEstatura" type="number" placeholder="Estatura (cm)">
+<textarea id="pacienteMalestares" placeholder="Malestares / síntomas"></textarea>
+<button onclick="agregarPaciente()">Agregar Paciente</button>
+
+<table>
+<thead>
+<tr>
+<th>Nombre</th>
+<th>Edad</th>
+<th>Peso</th>
+<th>Estatura</th>
+<th>Malestares</th>
+<th>Eliminar</th>
+</tr>
+</thead>
+<tbody id="tablaPacientes"></tbody>
+</table>
+</div>
+
+<div id="citas" class="section">
+<h1>Citas</h1>
+<select id="citaPaciente"></select>
+<input type="date" id="citaFecha">
+<input type="time" id="citaHora">
+<input id="citaConsultorio" placeholder="Consultorio">
+
+<button onclick="agregarCita()">Agregar Cita</button>
+
+<table>
+<thead>
+<tr>
+<th>Paciente</th>
+<th>Fecha</th>
+<th>Hora</th>
+<th>Consultorio</th>
+<th>Eliminar</th>
+</tr>
+</thead>
+<tbody id="tablaCitas"></tbody>
+</table>
+</div>
+
+</div>
+</div>
+
+<script>
+
+let usuarios = [
+{user:"admin", pass:"1234"},
+{user:"juan", pass:"1111"},
+{user:"maria", pass:"2222"},
+{user:"pedro", pass:"3333"}
+];
+
+let pacientes = JSON.parse(localStorage.getItem("pacientes")) || [];
+let citas = JSON.parse(localStorage.getItem("citas")) || [];
+
+function login(){
+let user = document.getElementById("user").value;
+let pass = document.getElementById("pass").value;
+
+let acceso = usuarios.find(u => u.user===user && u.pass===pass);
+
+if(acceso){
+document.getElementById("login").style.display="none";
+document.getElementById("panel").style.display="block";
+mostrar("dashboard");
+cargarTodo();
+}else{
+document.getElementById("error").innerText="Datos incorrectos";
+}
+}
+
+function logout(){
+location.reload();
+}
+
+function mostrar(id){
+document.querySelectorAll(".section").forEach(s=>s.style.display="none");
+document.getElementById(id).style.display="block";
+}
+
+function agregarPaciente(){
+
+let nombre=document.getElementById("pacienteNombre").value;
+let edad=document.getElementById("pacienteEdad").value;
+let peso=document.getElementById("pacientePeso").value;
+let estatura=document.getElementById("pacienteEstatura").value;
+let malestares=document.getElementById("pacienteMalestares").value;
+
+if(!nombre||!edad||!peso||!estatura)return;
+
+pacientes.push({nombre,edad,peso,estatura,malestares});
+
+localStorage.setItem("pacientes",JSON.stringify(pacientes));
+
+document.getElementById("pacienteNombre").value="";
+document.getElementById("pacienteEdad").value="";
+document.getElementById("pacientePeso").value="";
+document.getElementById("pacienteEstatura").value="";
+document.getElementById("pacienteMalestares").value="";
+
+cargarTodo();
+}
+
+function eliminarPaciente(i){
+
+pacientes.splice(i,1);
+
+localStorage.setItem("pacientes",JSON.stringify(pacientes));
+
+cargarTodo();
+
+}
+
+function agregarCita(){
+
+let paciente=document.getElementById("citaPaciente").value;
+let fecha=document.getElementById("citaFecha").value;
+let hora=document.getElementById("citaHora").value;
+let consultorio=document.getElementById("citaConsultorio").value;
+
+if(!paciente||!fecha||!hora||!consultorio)return;
+
+citas.push({paciente,fecha,hora,consultorio});
+
+localStorage.setItem("citas",JSON.stringify(citas));
+
+document.getElementById("citaFecha").value="";
+document.getElementById("citaHora").value="";
+document.getElementById("citaConsultorio").value="";
+
+cargarTodo();
+
+}
+
+function eliminarCita(i){
+
+citas.splice(i,1);
+
+localStorage.setItem("citas",JSON.stringify(citas));
+
+cargarTodo();
+
+}
+
+function cargarTodo(){
+
+cargarPacientes();
+cargarCitas();
+cargarDashboard();
+
+}
+
+function cargarPacientes(){
+
+let tabla=document.getElementById("tablaPacientes");
+
+tabla.innerHTML="";
+
+pacientes.forEach((p,i)=>{
+
+tabla.innerHTML+=`<tr>
+<td>${p.nombre}</td>
+<td>${p.edad}</td>
+<td>${p.peso}</td>
+<td>${p.estatura}</td>
+<td>${p.malestares}</td>
+<td><button onclick="eliminarPaciente(${i})">X</button></td>
+</tr>`;
+
+});
+
+let select=document.getElementById("citaPaciente");
+
+select.innerHTML="";
+
+pacientes.forEach(p=>{
+
+select.innerHTML+=`<option>${p.nombre}</option>`;
+
+});
+
+}
+
+function cargarCitas(){
+
+let tabla=document.getElementById("tablaCitas");
+
+tabla.innerHTML="";
+
+citas.forEach((c,i)=>{
+
+tabla.innerHTML+=`<tr>
+<td>${c.paciente}</td>
+<td>${c.fecha}</td>
+<td>${c.hora}</td>
+<td>${c.consultorio}</td>
+<td><button onclick="eliminarCita(${i})">X</button></td>
+</tr>`;
+
+});
+
+}
+
+function cargarDashboard(){
+
+document.getElementById("totalPacientes").innerText=pacientes.length;
+document.getElementById("totalCitas").innerText=citas.length;
+
+}
+
+</script>
+
+</body>
+</html>
